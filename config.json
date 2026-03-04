@@ -1,0 +1,38 @@
+{
+  "email_alerts": {
+    "enabled": true,
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "sender_email": "your_email@gmail.com",
+    "sender_password": "your_app_password",
+    "recipient_emails": [
+      "alert1@example.com",
+      "alert2@example.com"
+    ]
+  },
+  "threshold_settings": {
+    "area_zones": [
+      {
+        "name": "Zone_A",
+        "max_people": 50,
+        "alert_enabled": true,
+        "alert_email": true
+      },
+      {
+        "name": "Zone_B",
+        "max_people": 100,
+        "alert_enabled": true,
+        "alert_email": true
+      }
+    ],
+    "panic_threshold": 60,
+    "density_threshold": 80,
+    "movement_threshold": 0.5
+  },
+  "detection_settings": {
+    "method": "hybrid",
+    "yolo_model": "n",
+    "individual_detection": true,
+    "confidence_threshold": 0.5
+  }
+}
