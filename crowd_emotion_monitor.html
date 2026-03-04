@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowd Emotion Monitor - Real-Time Panic Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border-left: 5px solid #ff4757;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #ff4757;
+        }
+
+        .subtitle {
+            color: #a8dadc;
+            font-size: 1.1em;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(20, 40, 80, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 span {
+            font-size: 1.3em;
+        }
+
+        /* Video Feed Card */
+        .video-section {
+            grid-column: 1 / 2;
+            grid-row: 1 / 3;
+        }
+
+        #video-feed {
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid #4ecdc4;
+            max-height: 600px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .video-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ff4757;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Metrics Section */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .metric {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .metric.danger {
+            border-left-color: #ff4757;
+        }
+
+        .metric.warning {
+            border-left-color: #ffa502;
+        }
+
+        .metric label {
+            color: #a8dadc;
+            font-size: 0.85em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .metric .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .metric .unit {
+            font-size: 0.7em;
+            color: #a8dadc;
+            margin-left: 5px;
+        }
+
+        /* Panic Meter */
+        .panic-meter {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panic-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #a8dadc;
+            font-size: 0.9em;
+        }
+
+        .panic-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #4ecdc4;
+        }
+
+        .panic-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff6600, #ff0000);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        /* Alert Section */
+        .alert-section {
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+        }
+
+        .alert-box {
+            background: rgba(255, 71, 87, 0.1);
+            border: 2px solid #ff4757;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+            animation: alert-pulse 1s infinite;
+        }
+
+        .alert-box.hidden {
+            display: none;
+        }
+
+        .alert-box.active {
+            background: rgba(255, 71, 87, 0.2);
+            border-color: #ff4757;
+        }
+
+        @keyframes alert-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .alert-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .alert-text {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ff4757;
+            margin-bottom: 10px;
+        }
+
+        .alert-button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .alert-button:hover {
+            background: #ff3838;
+            transform: scale(1.02);
+        }
+
+        .alert-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Sentiment Section */
+        .sentiment-section {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+        }
+
+        .sentiment-visual {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 120px;
+            margin: 15px 0;
+        }
+
+        .sentiment-bar {
+            width: 30%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px 5px 0 0;
+            min-height: 10px;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sentiment-bar.negative {
+            background: rgba(255, 71, 87, 0.6);
+        }
+
+        .sentiment-bar.neutral {
+            background: rgba(255, 200, 0, 0.6);
+        }
+
+        .sentiment-bar.positive {
+            background: rgba(78, 205, 196, 0.6);
+        }
+
+        .sentiment-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+
+        /* Recent Alerts List */
+        .recent-alerts {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            grid-column: 1 / -1;
+        }
+
+        .recent-alerts h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #4ecdc4;
+            font-size: 0.9em;
+        }
+
+        .alert-item.critical {
+            border-left-color: #ff4757;
+            background: rgba(255, 71, 87, 0.05);
+        }
+
+        .alert-item.high {
+            border-left-color: #ffa502;
+        }
+
+        .alert-time {
+            color: #a8dadc;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .alert-message {
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .alert-details {
+            color: #95a5a6;
+            font-size: 0.8em;
+        }
+
+        .alert-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .alert-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .alert-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .alert-list::-webkit-scrollbar-thumb {
+            background: rgba(78, 205, 196, 0.6);
+            border-radius: 10px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button.control-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px;
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid #4ecdc4;
+            color: #4ecdc4;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button.control-btn:hover {
+            background: rgba(78, 205, 196, 0.4);
+            border-color: #fff;
+        }
+
+        button.control-btn:active {
+            transform: scale(0.95);
+        }
+
+        button.control-btn.danger {
+            background: rgba(255, 71, 87, 0.2);
+            border-color: #ff4757;
+            color: #ff4757;
+        }
+
+        button.control-btn.danger:hover {
+            background: rgba(255, 71, 87, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #a8dadc;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .video-section {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            .alert-section {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            .sentiment-section {
+                grid-column: 1;
+                grid-row: auto;
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Video Upload Section */
+        .upload-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .upload-container {
+            width: 100%;
+        }
+
+        .upload-box {
+            border: 2px dashed #4ecdc4;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .upload-box:hover {
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.05);
+        }
+
+        .upload-box.dragover {
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-box p {
+            color: #a8dadc;
+            margin: 5px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #ff4757);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .result-item label {
+            display: block;
+            color: #a8dadc;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a8dadc;
+        }
+
+        .empty-state-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        /* Visualization Tabs */
+        .viz-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 0;
+            flex-wrap: wrap;
+        }
+
+        .viz-tab-btn {
+            padding: 10px 20px;
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid #4ecdc4;
+            color: #4ecdc4;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .viz-tab-btn:hover {
+            background: rgba(78, 205, 196, 0.4);
+        }
+
+        .viz-tab-btn.active {
+            background: #4ecdc4;
+            color: #000;
+            border-bottom-color: #4ecdc4;
+        }
+
+        .viz-tab-content {
+            background: rgba(20, 40, 80, 0.5);
+            padding: 20px;
+            border: 1px solid #4ecdc4;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 20px;
+        }
+
+        .viz-tab-content.active {
+            display: block;
+        }
+
+        .viz-tab-content img {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .viz-tab-content img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 40px rgba(78, 205, 196, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚨 Crowd Emotion Monitor</h1>
+            <p class="subtitle">Real-Time Panic Detection & Automatic Help System</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- Video Feed with Heatmap -->
+            <div class="card video-section">
+                <h2><span>📹</span> Live Feed with Heatmap</h2>
+                <img id="video-feed" src="/video_feed" alt="Live webcam feed">
+                <div class="video-status">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="fps-display">FPS: --</span>
+                    <span id="status-text">Initializing...</span>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="card">
+                <h2><span>📊</span> System Metrics</h2>
+                <div class="metrics-grid">
+                    <div class="metric" id="crowd-metric">
+                        <label>Crowd Count</label>
+                        <div class="value"><span id="crowd-count">0</span><span class="unit">people</span></div>
+                    </div>
+                    <div class="metric" id="density-metric">
+                        <label>Crowd Density</label>
+                        <div class="value"><span id="crowd-density">0</span><span class="unit">%</span></div>
+                    </div>
+                    <div class="metric" id="movement-metric">
+                        <label>Movement Speed</label>
+                        <div class="value"><span id="movement-speed">0.00</span><span class="unit">m/s</span></div>
+                    </div>
+                    <div class="metric" id="sentiment-metric">
+                        <label>Crowd Sentiment</label>
+                        <div class="value"><span id="sentiment-score">0.00</span><span class="unit">/1.0</span></div>
+                    </div>
+                </div>
+
+                <div class="panic-meter">
+                    <div class="panic-label">
+                        <span>Panic Level</span>
+                        <span id="panic-percent">0%</span>
+                    </div>
+                    <div class="panic-bar">
+                        <div class="panic-fill" id="panic-fill" style="width: 0%">
+                            <span id="panic-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert System -->
+            <div class="card alert-section">
+                <h2><span>🚨</span> Alert System</h2>
+                
+                <div class="alert-box" id="panic-alert">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-text">PANIC DETECTED!</div>
+                    <p>Help is being requested immediately...</p>
+                    <button class="alert-button" onclick="dismissAlert()">Dismiss</button>
+                </div>
+
+                <div id="manual-alert-section">
+                    <p style="color: #a8dadc; margin-bottom: 15px;">No active panic detected</p>
+                    <button class="alert-button" onclick="requestManualHelp()">Request Help Manually</button>
+                    <button class="control-btn danger" onclick="clearAlerts()">Clear All Alerts</button>
+                </div>
+            </div>
+
+            <!-- Sentiment Analysis -->
+            <div class="card sentiment-section">
+                <h2><span>😊</span> Crowd Sentiment</h2>
+                <div class="sentiment-visual">
+                    <div class="sentiment-bar negative" id="sentiment-negative" style="height: 50%;">
+                        <div class="sentiment-label">Negative</div>
+                    </div>
+                    <div class="sentiment-bar neutral" id="sentiment-neutral" style="height: 50%;">
+                        <div class="sentiment-label">Neutral</div>
+                    </div>
+                    <div class="sentiment-bar positive" id="sentiment-positive" style="height: 50%;">
+                        <div class="sentiment-label">Positive</div>
+                    </div>
+                </div>
+                <p id="sentiment-text" style="text-align: center; color: #a8dadc;">Analyzing crowd emotions...</p>
+            </div>
+        </div>
+
+        <!-- Video Upload & Analysis Section -->
+        <div class="card upload-section">
+            <h2><span>📤</span> Upload & Analyze Video</h2>
+            <div class="upload-container">
+                <div class="upload-box" id="upload-box">
+                    <div class="upload-icon">📹</div>
+                    <p>Drag and drop video file here or click to select</p>
+                    <p style="font-size: 0.9em; color: #a8dadc;">Supported formats: MP4, AVI, MOV, MKV, FLV, WMV</p>
+                    <input type="file" id="video-file-input" accept=".mp4,.avi,.mov,.mkv,.flv,.wmv" style="display: none;">
+                </div>
+                <div id="upload-progress" style="display: none; margin-top: 20px;">
+                    <p>Processing video...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+                <div id="analysis-results" style="display: none; margin-top: 20px;">
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <label>Frames Analyzed</label>
+                            <div class="result-value" id="result-frames">0</div>
+                        </div>
+                        <div class="result-item">
+                            <label>Avg Crowd Count</label>
+                            <div class="result-value" id="result-avg-crowd">0</div>
+                        </div>
+                        <div class="result-item">
+                            <label>Max Crowd Count</label>
+                            <div class="result-value" id="result-max-crowd">0</div>
+                        </div>
+                        <div class="result-item">
+                            <label>Avg Density</label>
+                            <div class="result-value" id="result-avg-density">0%</div>
+                        </div>
+                        <div class="result-item">
+                            <label>Max Density</label>
+                            <div class="result-value" id="result-max-density">0%</div>
+                        </div>
+                        <div class="result-item">
+                            <label>Avg Movement</label>
+                            <div class="result-value" id="result-avg-movement">0.00</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Visualization Tabs -->
+                    <div style="margin-top: 20px;">
+                        <div class="viz-tabs">
+                            <button class="viz-tab-btn active" onclick="switchTab('overlay')" style="background: #4ecdc4; color: #000;">Density Overlay</button>
+                            <button class="viz-tab-btn" onclick="switchTab('heatmap')">Heatmap Only</button>
+                            <button class="viz-tab-btn" onclick="switchTab('original')">Original Frame</button>
+                        </div>
+                        
+                        <!-- Overlay View (Default) -->
+                        <div id="tab-overlay" class="viz-tab-content active">
+                            <h3 style="color: #4ecdc4; margin-bottom: 10px; margin-top: 15px;">Crowd Density Overlay</h3>
+                            <p style="color: #a8dadc; font-size: 0.9em; margin-bottom: 10px;">Video frame with heatmap overlay showing density distribution (Red=High, Dark=Low)</p>
+                            <img id="overlay-image" style="width: 100%; max-width: 800px; border-radius: 8px; border: 2px solid #4ecdc4; box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);">
+                        </div>
+                        
+                        <!-- Heatmap View -->
+                        <div id="tab-heatmap" class="viz-tab-content" style="display: none;">
+                            <h3 style="color: #4ecdc4; margin-bottom: 10px; margin-top: 15px;">Pure Heatmap View</h3>
+                            <p style="color: #a8dadc; font-size: 0.9em; margin-bottom: 10px;">Density heatmap without the original frame</p>
+                            <img id="heatmap-image" style="width: 100%; max-width: 800px; border-radius: 8px; border: 2px solid #ff4757;">
+                        </div>
+                        
+                        <!-- Original Frame View -->
+                        <div id="tab-original" class="viz-tab-content" style="display: none;">
+                            <h3 style="color: #4ecdc4; margin-bottom: 10px; margin-top: 15px;">Original Video Frame</h3>
+                            <p style="color: #a8dadc; font-size: 0.9em; margin-bottom: 10px;">Last frame from uploaded video (before density analysis)</p>
+                            <img id="original-image" style="width: 100%; max-width: 800px; border-radius: 8px; border: 2px solid #a8dadc;">
+                        </div>
+                    </div>
+                    
+                    <button class="control-btn" onclick="resetUpload()" style="margin-top: 20px;">Upload Another Video</button>
+                </div>
+                <div id="error-message" style="display: none; color: #ff4757; padding: 15px; background: rgba(255, 71, 87, 0.1); border-radius: 5px; margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="card recent-alerts">
+            <h3><span>📋</span> Recent Alerts <span class="spinner" id="alert-spinner"></span></h3>
+            <div class="alert-list" id="alerts-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">✓</div>
+                    <p>No alerts yet. System is monitoring...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <button class="control-btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+            <button class="control-btn" onclick="testPanicAlert()">🧪 Test Panic Alert</button>
+            <button class="control-btn danger" onclick="location.reload()">🔁 Reload Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const UPDATE_INTERVAL = 500; // ms
+        let panicActive = false;
+
+        // ====================================================================
+        // STATUS UPDATE
+        // ====================================================================
+
+        async function updateStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+
+                // Update metrics
+                document.getElementById('crowd-count').textContent = data.crowd_count;
+                document.getElementById('crowd-density').textContent = data.crowd_density.toFixed(1);
+                document.getElementById('movement-speed').textContent = data.movement_intensity.toFixed(2);
+                document.getElementById('sentiment-score').textContent = Math.max(-1, Math.min(1, data.sentiment_score)).toFixed(2);
+                document.getElementById('panic-percent').textContent = data.panic_percent.toFixed(1) + '%';
+                document.getElementById('fps-display').textContent = `FPS: ${data.fps}`;
+                document.getElementById('status-text').textContent = data.status;
+
+                // Update panic meter
+                const panicFill = document.getElementById('panic-fill');
+                panicFill.style.width = data.panic_percent + '%';
+                panicFill.textContent = Math.round(data.panic_percent) + '%';
+
+                // Update panic alert visibility
+                const panicAlert = document.getElementById('panic-alert');
+                if (data.is_panic && !panicActive) {
+                    panicActive = true;
+                    panicAlert.classList.add('active');
+                    document.getElementById('manual-alert-section').style.display = 'none';
+                } else if (!data.is_panic && panicActive) {
+                    panicActive = false;
+                    panicAlert.classList.remove('active');
+                    document.getElementById('manual-alert-section').style.display = 'block';
+                }
+
+                // Update sentiment visualization
+                const sentiment = data.sentiment_score;
+                if (sentiment < -0.3) {
+                    document.getElementById('sentiment-negative').style.height = '100%';
+                    document.getElementById('sentiment-neutral').style.height = '20%';
+                    document.getElementById('sentiment-positive').style.height = '10%';
+                    document.getElementById('sentiment-text').textContent = '😞 Crowd appears distressed or panicked';
+                } else if (sentiment > 0.3) {
+                    document.getElementById('sentiment-negative').style.height = '10%';
+                    document.getElementById('sentiment-neutral').style.height = '20%';
+                    document.getElementById('sentiment-positive').style.height = '100%';
+                    document.getElementById('sentiment-text').textContent = '😊 Crowd appears happy or calm';
+                } else {
+                    document.getElementById('sentiment-negative').style.height = '30%';
+                    document.getElementById('sentiment-neutral').style.height = '100%';
+                    document.getElementById('sentiment-positive').style.height = '30%';
+                    document.getElementById('sentiment-text').textContent = '😐 Crowd sentiment is neutral';
+                }
+
+                // Update metric colors based on values
+                updateMetricColors(data);
+
+                // Update status dot
+                const statusDot = document.getElementById('status-dot');
+                if (data.status === 'Running') {
+                    statusDot.classList.remove('offline');
+                } else {
+                    statusDot.classList.add('offline');
+                }
+
+            } catch (error) {
+                console.error('Error updating status:', error);
+                document.getElementById('status-dot').classList.add('offline');
+                document.getElementById('status-text').textContent = 'Connection lost';
+            }
+        }
+
+        function updateMetricColors(data) {
+            const crowdMetric = document.getElementById('crowd-metric');
+            const densityMetric = document.getElementById('density-metric');
+            const movementMetric = document.getElementById('movement-metric');
+
+            // Crowd count
+            if (data.crowd_count > 1000) {
+                crowdMetric.classList.add('danger');
+            } else {
+                crowdMetric.classList.remove('danger');
+            }
+
+            // Density
+            if (data.crowd_density > 80) {
+                densityMetric.classList.add('danger');
+            } else if (data.crowd_density > 50) {
+                densityMetric.classList.add('warning');
+                densityMetric.classList.remove('danger');
+            } else {
+                densityMetric.classList.remove('danger', 'warning');
+            }
+
+            // Movement
+            if (data.movement_intensity > 0.5) {
+                movementMetric.classList.add('warning');
+            } else {
+                movementMetric.classList.remove('warning');
+            }
+        }
+
+        // ====================================================================
+        // ALERTS UPDATE
+        // ====================================================================
+
+        async function updateAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/alerts`);
+                const data = await response.json();
+
+                const alertsList = document.getElementById('alerts-list');
+
+                if (data.alerts.length === 0) {
+                    alertsList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">✓</div>
+                            <p>No alerts yet. System is monitoring...</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                alertsList.innerHTML = data.alerts.slice().reverse().map(alert => `
+                    <div class="alert-item ${alert.severity === 'CRITICAL' ? 'critical' : alert.severity === 'HIGH' ? 'high' : ''}">
+                        <div class="alert-time">${new Date(alert.timestamp).toLocaleTimeString()}</div>
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-details">
+                            Panic: ${alert.panic_percent.toFixed(1)}% | 
+                            Count: ${alert.crowd_count} | 
+                            Density: ${alert.density.toFixed(1)}%
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error updating alerts:', error);
+            }
+        }
+
+        // ====================================================================
+        // ACTION HANDLERS
+        // ====================================================================
+
+        async function requestManualHelp() {
+            try {
+                const response = await fetch(`${API_BASE}/alert/request`, { method: 'POST' });
+                if (response.ok) {
+                    showNotification('Help request sent successfully!', 'success');
+                    updateAlerts();
+                }
+            } catch (error) {
+                console.error('Error requesting help:', error);
+                showNotification('Failed to send help request', 'error');
+            }
+        }
+
+        async function clearAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/alert/clear`, { method: 'POST' });
+                if (response.ok) {
+                    document.getElementById('panic-alert').classList.remove('active');
+                    document.getElementById('manual-alert-section').style.display = 'block';
+                    panicActive = false;
+                    updateAlerts();
+                }
+            } catch (error) {
+                console.error('Error clearing alerts:', error);
+            }
+        }
+
+        function dismissAlert() {
+            document.getElementById('panic-alert').classList.remove('active');
+        }
+
+        async function testPanicAlert() {
+            showNotification('Testing panic alert system...', 'info');
+            await requestManualHelp();
+        }
+
+        function refreshStatus() {
+            updateStatus();
+            updateAlerts();
+            showNotification('Status refreshed!', 'success');
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create and show notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#4ecdc4' : type === 'error' ? '#ff4757' : '#4ecdc4'};
+                color: white;
+                border-radius: 5px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // ====================================================================
+        // VIDEO UPLOAD HANDLER
+        // ====================================================================
+
+        function initVideoUpload() {
+            const uploadBox = document.getElementById('upload-box');
+            const fileInput = document.getElementById('video-file-input');
+
+            uploadBox.addEventListener('click', () => fileInput.click());
+
+            uploadBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadBox.classList.add('dragover');
+            });
+
+            uploadBox.addEventListener('dragleave', () => {
+                uploadBox.classList.remove('dragover');
+            });
+
+            uploadBox.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadBox.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleVideoUpload(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleVideoUpload(e.target.files[0]);
+                }
+            });
+        }
+
+        async function handleVideoUpload(file) {
+            const uploadBox = document.getElementById('upload-box');
+            const uploadProgress = document.getElementById('upload-progress');
+            const analysisResults = document.getElementById('analysis-results');
+            const errorMessage = document.getElementById('error-message');
+
+            uploadBox.style.display = 'none';
+            uploadProgress.style.display = 'block';
+            analysisResults.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/video/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload failed');
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                uploadProgress.style.display = 'none';
+                analysisResults.style.display = 'block';
+
+                document.getElementById('result-frames').textContent = data.frames_analyzed;
+                document.getElementById('result-avg-crowd').textContent = data.avg_crowd_count;
+                document.getElementById('result-max-crowd').textContent = data.max_crowd_count;
+                document.getElementById('result-avg-density').textContent = data.avg_density.toFixed(1) + '%';
+                document.getElementById('result-max-density').textContent = data.max_density.toFixed(1) + '%';
+                document.getElementById('result-avg-movement').textContent = data.avg_movement.toFixed(2);
+
+                // Display all three visualization types
+                if (data.overlay_frame) {
+                    document.getElementById('overlay-image').src = data.overlay_frame;
+                }
+                
+                if (data.heatmap_frame) {
+                    document.getElementById('heatmap-image').src = data.heatmap_frame;
+                }
+                
+                if (data.original_frame) {
+                    document.getElementById('original-image').src = data.original_frame;
+                }
+
+                showNotification('Video analysis completed successfully!', 'success');
+
+            } catch (error) {
+                uploadProgress.style.display = 'none';
+                uploadBox.style.display = 'block';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Error: ' + error.message;
+                showNotification('Failed to analyze video: ' + error.message, 'error');
+            }
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.getElementById('tab-overlay').classList.remove('active');
+            document.getElementById('tab-heatmap').classList.remove('active');
+            document.getElementById('tab-original').classList.remove('active');
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.viz-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+
+            // Mark selected button as active
+            event.target.classList.add('active');
+        }
+
+        function resetUpload() {
+            document.getElementById('upload-box').style.display = 'block';
+            document.getElementById('analysis-results').style.display = 'none';
+            document.getElementById('video-file-input').value = '';
+        }
+
+        // ====================================================================
+        // INITIALIZATION
+        // ====================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Crowd Emotion Monitor initialized');
+            
+            // Initialize video upload
+            initVideoUpload();
+
+            // Initial updates
+            updateStatus();
+            updateAlerts();
+
+            // Set up auto-updates
+            setInterval(updateStatus, UPDATE_INTERVAL);
+            setInterval(updateAlerts, 1000);
+
+            // Show welcome message
+            showNotification('Crowd Emotion Monitor active - Monitoring for panic situations', 'success');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'h') {
+                e.preventDefault();
+                requestManualHelp();
+            }
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                refreshStatus();
+            }
+        });
+    </script>
+
+    <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Alert Dashboard - Sentiment Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .sentiment-analyzer {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .input-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .input-group input,
+        .input-group textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .result-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .sentiment-score {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .sentiment-meter {
+            flex: 1;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .sentiment-meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444 0%, #ffcc00 50%, #44dd44 100%);
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            transition: width 0.3s ease;
+        }
+        
+        .sentiment-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .badge-negative {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .badge-neutral {
+            background: #ffcc00;
+            color: #333;
+        }
+        
+        .badge-positive {
+            background: #44dd44;
+            color: white;
+        }
+        
+        .alert-priority {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        
+        .priority-critical {
+            background: #ffcccc;
+            border-left: 4px solid #ff0000;
+            color: #cc0000;
+        }
+        
+        .priority-high {
+            background: #ffe6cc;
+            border-left: 4px solid #ff9900;
+            color: #cc6600;
+        }
+        
+        .priority-moderate {
+            background: #ffffcc;
+            border-left: 4px solid #ffcc00;
+            color: #cc9900;
+        }
+        
+        .priority-low {
+            background: #ccffcc;
+            border-left: 4px solid #00cc00;
+            color: #006600;
+        }
+        
+        .priority-icon {
+            font-size: 24px;
+        }
+        
+        .alert-history {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            font-size: 13px;
+        }
+        
+        .history-item .timestamp {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .history-item .message {
+            margin-top: 5px;
+            color: #333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-box {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab-button {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-button:hover {
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .real-time-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .feed-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .feed-time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .feed-body {
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .api-tester {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .api-result {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .success { color: #00aa00; }
+        .error { color: #cc0000; }
+        .info { color: #0066cc; }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧠 Smart Alert Dashboard</h1>
+            <div class="header-subtitle">Real-time Sentiment Analysis for Intelligent Alerting</div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('analyzer')">📊 Sentiment Analyzer</button>
+                <button class="tab-button" onclick="switchTab('priority')">🚨 Priority Calculator</button>
+                <button class="tab-button" onclick="switchTab('realtime')">📡 Real-Time Feed</button>
+                <button class="tab-button" onclick="switchTab('api')">🔌 API Tester</button>
+            </div>
+        </div>
+        
+        <!-- Tab 1: Sentiment Analyzer -->
+        <div id="analyzer" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h2>Analyze Text Sentiment</h2>
+                    <div class="sentiment-analyzer">
+                        <div class="input-group">
+                            <label for="sentiment-text">Enter Text to Analyze:</label>
+                            <textarea id="sentiment-text" placeholder="Type or paste crowd-related text here...">Crowd gathering peacefully"></textarea>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="analyzeSentiment()">🔍 Analyze</button>
+                            <button class="btn btn-secondary" onclick="clearSentimentForm()">Clear</button>
+                        </div>
+                        
+                        <div id="sentiment-result" class="result-box" style="display: none;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>Analysis Result:</strong>
+                            </div>
+                            
+                            <div class="sentiment-score">
+                                <span id="sentiment-badge" class="sentiment-badge">Neutral</span>
+                                <div style="flex: 1;">
+                                    <div class="sentiment-meter">
+                                        <div class="sentiment-meter-fill" id="sentiment-meter" style="width: 50%;">0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="sentiment-details"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>Sentiment Scale Reference</h2>
+                    <div style="padding: 10px 0;">
+                        <div style="margin-bottom: 15px;">
+                            <div class="sentiment-badge badge-negative">🔴 NEGATIVE: -1.0 to -0.3</div>
+                            <div style="color: #666; font-size: 12px; margin-top: 5px;">Dangerous, hostile, emergency scenarios</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <div class="sentiment-badge badge-neutral">🟡 NEUTRAL: -0.3 to +0.3</div>
+                            <div style="color: #666; font-size: 12px; margin-top: 5px;">Normal crowd movement, routine situations</div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <div class="sentiment-badge badge-positive">🟢 POSITIVE: +0.3 to +1.0</div>
+                            <div style="color: #666; font-size: 12px; margin-top: 5px;">Happy, celebration, festive events</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Confidence</div>
+                            <div class="stat-value" id="confidence-display">0%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Analysis Engine</div>
+                            <div class="stat-value" id="engine-display">VADER</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 2: Priority Calculator -->
+        <div id="priority" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h2>Calculate Alert Priority</h2>
+                    <div class="sentiment-analyzer">
+                        <div class="input-group">
+                            <label for="crowd-count">Crowd Count:</label>
+                            <input type="number" id="crowd-count" value="850" min="0" max="10000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="crowd-threshold">Threshold:</label>
+                            <input type="number" id="crowd-threshold" value="500" min="1" max="10000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="crowd-context">Crowd Context (optional):</label>
+                            <textarea id="crowd-context" placeholder="Describe the situation...">Dangerous crowd panic chaos</textarea>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="calculatePriority()">⚡ Calculate</button>
+                            <button class="btn btn-secondary" onclick="clearPriorityForm()">Clear</button>
+                        </div>
+                        
+                        <div id="priority-result" class="result-box" style="display: none;">
+                            <div id="priority-display"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>Example Scenarios</h2>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="setPriorityScenario(850, 500, 'Dangerous crowd panic chaos')">🔴 Dangerous Scenario</button>
+                        <button class="btn btn-secondary" onclick="setPriorityScenario(2000, 500, 'Happy celebration excited crowd')">🟢 Happy Scenario</button>
+                        <button class="btn btn-secondary" onclick="setPriorityScenario(350, 500, 'Crowd moving normally')">🟡 Normal Scenario</button>
+                        <button class="btn btn-secondary" onclick="setPriorityScenario(1200, 500, 'Crowd gathering emergency')">🔴 Emergency</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 3: Real-Time Feed -->
+        <div id="realtime" class="tab-content">
+            <div class="card">
+                <h2>Real-Time Alert Feed</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn btn-primary" onclick="generateMockAlert()">🔄 Simulate Alert</button>
+                    <button class="btn btn-secondary" onclick="clearAlertHistory()">Clear History</button>
+                </div>
+                
+                <div id="alert-feed" class="alert-history">
+                    <div style="color: #999; text-align: center; padding: 30px;">
+                        No alerts yet. Click "Simulate Alert" to generate a test alert.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 4: API Tester -->
+        <div id="api" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h2>Test Sentiment APIs</h2>
+                    <div class="api-tester">
+                        <button class="btn btn-primary" onclick="testAPIEndpoint('status')">✅ Test Status</button>
+                        <button class="btn btn-primary" onclick="testAPIEndpoint('analyze')">📊 Test Analyze</button>
+                        <button class="btn btn-primary" onclick="testAPIEndpoint('priority')">🚨 Test Priority</button>
+                        <button class="btn btn-primary" onclick="testAPIEndpoint('message')">💬 Test Message</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>API Response</h2>
+                    <div id="api-response" class="api-result">
+                        Responses will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // =====================================================================
+        // TAB MANAGEMENT
+        // =====================================================================
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Deactivate all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activate button
+            event.target.classList.add('active');
+        }
+        
+        // =====================================================================
+        // SENTIMENT ANALYZER
+        // =====================================================================
+        
+        async function analyzeSentiment() {
+            const text = document.getElementById('sentiment-text').value.trim();
+            
+            if (!text) {
+                alert('Please enter text to analyze');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/sentiment/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API Error: ' + response.status);
+                }
+                
+                const data = await response.json();
+                displaySentimentResult(data);
+            } catch (error) {
+                alert('Error analyzing sentiment: ' + error.message);
+            }
+        }
+        
+        function displaySentimentResult(data) {
+            const score = data.sentiment_score;
+            const confidence = data.confidence;
+            const label = data.sentiment_label;
+            
+            // Determine badge color and emotion
+            let badgeClass = 'badge-neutral';
+            if (score < -0.3) badgeClass = 'badge-negative';
+            else if (score > 0.3) badgeClass = 'badge-positive';
+            
+            // Calculate meter position (0-1 range maps to 0-100%)
+            const meterWidth = ((score + 1) / 2) * 100;
+            
+            // Display results
+            const resultDiv = document.getElementById('sentiment-result');
+            resultDiv.style.display = 'block';
+            
+            document.getElementById('sentiment-badge').textContent = label.toUpperCase();
+            document.getElementById('sentiment-badge').className = 'sentiment-badge ' + badgeClass;
+            
+            document.getElementById('sentiment-meter').style.width = meterWidth + '%';
+            document.getElementById('sentiment-meter').textContent = score.toFixed(2);
+            
+            document.getElementById('confidence-display').textContent = Math.round(confidence * 100) + '%';
+            
+            const details = `
+                <div style="margin-top: 10px; font-size: 13px;">
+                    <div><strong>Score:</strong> ${score.toFixed(3)} (Range: -1.0 to +1.0)</div>
+                    <div><strong>Confidence:</strong> ${Math.round(confidence * 100)}%</div>
+                    <div><strong>Interpretation:</strong>
+                        ${score < -0.3 ? '🔴 Negative sentiment detected - Dangerous or hostile scenario' : 
+                          score > 0.3 ? '🟢 Positive sentiment detected - Happy or festive scenario' : 
+                          '🟡 Neutral sentiment - Normal crowd activity'}
+                    </div>
+                </div>
+            `;
+            document.getElementById('sentiment-details').innerHTML = details;
+        }
+        
+        function clearSentimentForm() {
+            document.getElementById('sentiment-text').value = '';
+            document.getElementById('sentiment-result').style.display = 'none';
+        }
+        
+        // =====================================================================
+        // PRIORITY CALCULATOR
+        // =====================================================================
+        
+        async function calculatePriority() {
+            const count = parseInt(document.getElementById('crowd-count').value);
+            const threshold = parseInt(document.getElementById('crowd-threshold').value);
+            const context = document.getElementById('crowd-context').value;
+            
+            if (isNaN(count) || count < 0) {
+                alert('Please enter a valid crowd count');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/alert/priority', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        count: count,
+                        threshold: threshold,
+                        context: context
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API Error: ' + response.status);
+                }
+                
+                const data = await response.json();
+                displayPriorityResult(data);
+            } catch (error) {
+                alert('Error calculating priority: ' + error.message);
+            }
+        }
+        
+        function displayPriorityResult(data) {
+            const priority = data.priority;
+            const level = data.priority_level;
+            const sentiment = data.sentiment;
+            const severity = data.severity;
+            
+            const icons = {
+                'CRITICAL': '🔴',
+                'HIGH': '🟠',
+                'MODERATE': '🟡',
+                'LOW': '🟢'
+            };
+            
+            const priorityClass = {
+                'CRITICAL': 'priority-critical',
+                'HIGH': 'priority-high',
+                'MODERATE': 'priority-moderate',
+                'LOW': 'priority-low'
+            }[level] || 'priority-moderate';
+            
+            const resultDiv = document.getElementById('priority-result');
+            resultDiv.style.display = 'block';
+            
+            const html = `
+                <div class="alert-priority ${priorityClass}">
+                    <span class="priority-icon">${icons[level] || '⚠️'}</span>
+                    <div>
+                        <div><strong>Priority Level: ${level}</strong></div>
+                        <div style="font-size: 12px; margin-top: 5px;">
+                            Alert Priority: ${Math.round(priority * 100)}% | 
+                            Sentiment: ${sentiment.toFixed(2)} | 
+                            Severity: ${Math.round(severity * 100)}%
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 13px; color: #666;">
+                    <div>📊 <strong>Analysis:</strong></div>
+                    <div style="margin-top: 5px;">
+                        • Crowd Count: ${data.crowd_count} (Threshold: ${data.threshold})<br>
+                        • Severity Score: ${Math.round(severity * 100)}%<br>
+                        • Sentiment Score: ${sentiment > 0.3 ? '🟢 Positive' : sentiment < -0.3 ? '🔴 Negative' : '🟡 Neutral'} (${sentiment.toFixed(2)})<br>
+                        • Combined Priority: ${Math.round(priority * 100)}%
+                    </div>
+                </div>
+            `;
+            document.getElementById('priority-result').innerHTML = html;
+        }
+        
+        function clearPriorityForm() {
+            document.getElementById('crowd-count').value = '850';
+            document.getElementById('crowd-threshold').value = '500';
+            document.getElementById('crowd-context').value = '';
+            document.getElementById('priority-result').style.display = 'none';
+        }
+        
+        function setPriorityScenario(count, threshold, context) {
+            document.getElementById('crowd-count').value = count;
+            document.getElementById('crowd-threshold').value = threshold;
+            document.getElementById('crowd-context').value = context;
+            calculatePriority();
+        }
+        
+        // =====================================================================
+        // REAL-TIME FEED
+        // =====================================================================
+        
+        const alertHistory = [];
+        
+        function addAlert(crowdCount, sentiment, priority, level) {
+            const timestamp = new Date().toLocaleTimeString();
+            const alert = {
+                time: timestamp,
+                count: crowdCount,
+                sentiment: sentiment,
+                priority: priority,
+                level: level
+            };
+            
+            alertHistory.unshift(alert);
+            if (alertHistory.length > 20) alertHistory.pop();
+            
+            updateAlertFeed();
+        }
+        
+        function updateAlertFeed() {
+            const feed = document.getElementById('alert-feed');
+            
+            if (alertHistory.length === 0) {
+                feed.innerHTML = '<div style="color: #999; text-align: center; padding: 30px;">No alerts yet.</div>';
+                return;
+            }
+            
+            feed.innerHTML = alertHistory.map(alert => {
+                const priorityColors = {
+                    'CRITICAL': '#ff0000',
+                    'HIGH': '#ff9900',
+                    'MODERATE': '#ffcc00',
+                    'LOW': '#00cc00'
+                };
+                
+                const priorityIcons = {
+                    'CRITICAL': '🔴',
+                    'HIGH': '🟠',
+                    'MODERATE': '🟡',
+                    'LOW': '🟢'
+                };
+                
+                return `
+                    <div class="feed-item">
+                        <div class="feed-header">
+                            <div>
+                                <span style="font-size: 18px; margin-right: 5px;">${priorityIcons[alert.level]}</span>
+                                <strong>${alert.level}</strong>
+                            </div>
+                            <div class="feed-time">${alert.time}</div>
+                        </div>
+                        <div class="feed-body">
+                            👥 Crowd: ${alert.count} people | 
+                            💭 Sentiment: ${alert.sentiment.toFixed(2)} | 
+                            ⚡ Priority: ${Math.round(alert.priority * 100)}%
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function generateMockAlert() {
+            const counts = [350, 850, 1200, 2000];
+            const contexts = [
+                'Crowd moving normally',
+                'Dangerous crowd panic',
+                'Happy celebration',
+                'Emergency evacuation'
+            ];
+            
+            const randomCount = counts[Math.floor(Math.random() * counts.length)];
+            const randomContext = contexts[Math.floor(Math.random() * contexts.length)];
+            
+            fetch('/api/sentiment/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: randomContext })
+            })
+            .then(r => r.json())
+            .then(sentimentData => {
+                return fetch('/api/alert/priority', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        count: randomCount,
+                        threshold: 500,
+                        context: randomContext
+                    })
+                }).then(r => r.json()).then(priorityData => {
+                    addAlert(randomCount, sentimentData.sentiment_score, priorityData.priority, priorityData.priority_level);
+                });
+            })
+            .catch(error => console.error('Error generating mock alert:', error));
+        }
+        
+        function clearAlertHistory() {
+            alertHistory.length = 0;
+            updateAlertFeed();
+        }
+        
+        // =====================================================================
+        // API TESTER
+        // =====================================================================
+        
+        async function testAPIEndpoint(endpoint) {
+            const responseDiv = document.getElementById('api-response');
+            responseDiv.innerHTML = '<span class="loading"></span> Testing...';
+            
+            try {
+                let url, method = 'GET', body = null;
+                
+                if (endpoint === 'status') {
+                    url = '/api/sentiment/status';
+                } else if (endpoint === 'analyze') {
+                    url = '/api/sentiment/analyze';
+                    method = 'POST';
+                    body = JSON.stringify({ text: 'Dangerous crowd panic situation' });
+                } else if (endpoint === 'priority') {
+                    url = '/api/alert/priority';
+                    method = 'POST';
+                    body = JSON.stringify({
+                        count: 850,
+                        threshold: 500,
+                        context: 'Dangerous crowd panic'
+                    });
+                } else if (endpoint === 'message') {
+                    url = '/api/alert/message';
+                    method = 'POST';
+                    body = JSON.stringify({
+                        count: 850,
+                        threshold: 500,
+                        context: 'Dangerous crowd'
+                    });
+                }
+                
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (body) options.body = body;
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                const output = `<span class="success">✅ ${response.status} - Success</span>
+
+API Endpoint: ${url}
+Method: ${method}
+
+Response:
+${JSON.stringify(data, null, 2)}`;
+                
+                responseDiv.textContent = output;
+            } catch (error) {
+                responseDiv.innerHTML = `<span class="error">❌ Error</span>
+${error.message}`;
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            console.log('Sentiment Dashboard loaded successfully');
+        });
+    </script>
+</body>
+</html>
