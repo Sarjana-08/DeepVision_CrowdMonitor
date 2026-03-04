@@ -1,1 +1,30 @@
 *
+# Environment
+.venv/
+.env
+*.pyc
+__pycache__/
+
+# Generated files
+*.db
+*.mp4
+yolov8n.pt
+uploaded_videos/
+video_outputs/
+results/
+crowd_monitor_output/
+
+# IDE
+.vscode/__pycache__/
+
+# Datasets
+processed_dataset*/
+ShanghaiTech/
+shanghaitech_h5_empty/
+
+# Archives
+archive/
+
+# Cache
+.pytest_cache/
+.DS_Store
